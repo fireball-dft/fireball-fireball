@@ -1,1 +1,1 @@
-../../fireball-thunder/src/Makefile
+../../fireball-master/src/Makefile

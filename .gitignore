@@ -33,3 +33,5 @@
 *.xsf
 .svn
 .project
+*~
+.DS_Store

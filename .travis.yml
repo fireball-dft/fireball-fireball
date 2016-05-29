@@ -10,17 +10,18 @@ env:
 install:
     - sudo apt-add-repository --yes ppa:ubuntu-toolchain-r/test
     - sudo apt-get update
-    - sudo apt-get install gcc-4.8 gfortran-4.8 libgomp1 openmpi-bin libopenmpi-dev liblapack-dev libblas-dev
-
-    - git clone https://github.com/fireball-dft/fireball-fireball.git
-    - git clone https://github.com/fireball-dft/fireball-master.git
+    # sudo apt-get install gcc-4.8 gfortran-4.8 libgomp1 openmpi-bin libopenmpi-dev liblapack-dev libblas-dev
+    - sudo apt-get install gcc-4.8 gfortran-4.8 liblapack-dev libblas-dev
     - pwd
+    - ls -al
+    - cd ..
+    - git clone https://github.com/fireball-dft/fireball-master.git
     - cd fireball-fireball/src
     - make -f Makefile.travis fireball.x
 
-script: 
+script: true
     # make check PFUNIT=pfunit
 
-after_success:
+after_success: true
     # find .
     # codecov --gcov-exec=gcov-4.8

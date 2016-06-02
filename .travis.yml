@@ -18,6 +18,10 @@ install:
     - git clone https://github.com/fireball-dft/fireball-master.git
     - cd fireball-fireball/src
     - make fireball.x
+    - make fireball-MDET.x
+    - make lfireball.x
+    - make lfireball-MDET.x
+    
 
 script: true
     # make check PFUNIT=pfunit

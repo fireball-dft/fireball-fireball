@@ -231,9 +231,18 @@
 ! is modified to take s as a parameter, rather than reference s directly
 !$omp parallel do private (s, slogfile, sigma, iscf_iteration, timei, timef) &
 !$omp             private (ebs, uii_uee, uxcdcc, etot)
+        open(unit= 54, file="/home/accounts/ahernandez/thunder4.0/fireball-fireball/tests/08.co2_180_dogs/dmatx2.txt")
+        write(54,*) '                         '
+        write(54,*) 'new structure'
+        open(unit= 55, file="/home/accounts/ahernandez/thunder4.0/fireball-fireball/tests/08.co2_180_dogs/fvnamatx.txt")
+        write(55,*) '                         '
+        write(55,*) 'new structure'
+        
         do istructure = 1, nstructures
           s => structures(istructure)
           read (1, *) s%basisfile
+          write(54,*) 'structure =>', istructure
+          write(55,*) 'structure =>', istructure
           if (iseparate .eq. 1) then
             s%logfile = istructure + 1000
             s%inpfile = istructure + 2000
@@ -251,6 +260,7 @@
           write (s%logfile, *) ' Structure = ', istructure
           write (s%logfile,*)
 
+
           ! Read in the coordinates and parameters
           call read_positions (s)
 
@@ -265,7 +275,9 @@
 ! FIXME - We set nstepi and nstepf here!
           !nstepi = 1
           !nstepf = 100
+          call set_gear ()
           do itime_step = nstepi, nstepf
+ 
              write (s%logfile, *)
              write (s%logfile, '(A, I5, A1, I5, A1)') 'Molecular-Dynamics Loop  Step: (', itime_step, '/', nstepf, ')'
              write (s%logfile, '(A)') '==============================================='
@@ -303,15 +315,13 @@
             do while (sigma .gt. scf_tolerance_set .and.                  &
       &                 iscf_iteration .le. max_scf_iterations_set)
               write (s%logfile, *)
-              write (s%logfile, '(A, I5, A7, I5, A1)') 'Self-Consistent Field step: ', &
-      &              iscf_iteration, ' (max: ', max_scf_iterations_set, ')'
+              write (s%logfile, '(A, I5, A7, I5, A1)') 'Self-Consistent Field step: ', iscf_iteration, ' (max: ', max_scf_iterations_set, ')'
               write (s%logfile, '(A)') '----------------------------------------------------'
               write (s%logfile, *)
               write (s%logfile, *) ' Two-center charge dependent assemblers. '
               call assemble_vna_2c (s)
 !             call assemble_ewaldsr (s)
 !             call assemble_ewaldlr (s)
-
               write (s%logfile, *) ' Three-center charge dependent assemblers. '
               call assemble_vna_3c (s)
               call assemble_vxc (s)
@@ -345,7 +355,7 @@
               uii_uee = 0.0d0; uxcdcc = 0.0d0
               call assemble_uee (s, uii_uee)
               call assemble_uxc (s, uxcdcc)
-
+              call writeout_energies (s, ebs, uii_uee, uxcdcc)
               ! Writing out the energy pieces
               write (s%logfile, *)
               write (s%logfile, '(A)') 'Total Energy'
@@ -374,6 +384,7 @@
               write (s%logfile, *)
               write (s%logfile, 511) (etot - atomic_energy)/s%natoms
               write (s%logfile, *)
+              if (iwriteout_xyz .eq. 1) call writeout_xyz (s, ebs, uii_uee, uxcdcc)
               !write (s%logfile, *) ' ----------------------------------------------------- '
 
 ! End scf loop
@@ -382,9 +393,9 @@
               else
                 exit
               end if
-            end do
+            end do! End scf loop
             if (istructure .ne. 1) then
-                write (31,*) istructure, (etot - etot_previous)/0.005d0
+                write (31,*) istructure, -(etot - etot_previous)/0.003d0
                 !write (31,*) istructure, (etot - etot_previous)/0.01d0
             end if
             etot_previous = etot
@@ -423,16 +434,26 @@
             call Dassemble_uxc (s)
 
             call build_forces (s)
-            call writeout_forces (s)
+            if (iwriteout_forces .eq. 1) call writeout_forces (s)
 
-            ! testing only
-            write (32,*) istructure, s%forces(1)%ftot(3)
-            !write (70,*) istructure, sqrt( (s%forces(1)%ftot(3))**2 + (s%forces(1)%ftot(2))**2 + (s%forces(1)%ftot(1))**2)
-            !write (71,*) istructure, sqrt( (s%forces(2)%ftot(3))**2 + (s%forces(2)%ftot(2))**2 + (s%forces(2)%ftot(1))**2)
-            !write (72,*) istructure, sqrt( (s%forces(3)%ftot(3))**2 + (s%forces(3)%ftot(2))**2 + (s%forces(3)%ftot(1))**2)
-            !write (73,*) istructure, sqrt((s%forces(3)%ftot(1)+ s%forces(2)%ftot(1)+ s%forces(1)%ftot(1))**2 + &
-            !&                             (s%forces(3)%ftot(2)+ s%forces(2)%ftot(2)+ s%forces(1)%ftot(2))**2 + &
-            !&                             (s%forces(3)%ftot(3)+ s%forces(2)%ftot(3)+ s%forces(1)%ftot(3))**2)
+            write (s%logfile,*)
+            write (s%logfile,*) ' Total Forces: '
+            do iatom = 1, s%natoms
+              write (s%logfile, 512)  iatom, s%forces(iatom)%ftot
+            end do
+            call md (s, itime_step)
+            
+! Output the coordinates to a .xyz file
+            slogfile = s%basisfile(:len(trim(s%basisfile))-4)
+            slogfile = trim(slogfile)//'.xyz'
+            open (unit = s%inpfile, file = slogfile, status = 'unknown', position = 'append')
+            write (s%inpfile, *) s%natoms
+            write (s%inpfile, *) etot, T_instantaneous
+            do iatom = 1, s%natoms
+              in1 = s%atom(iatom)%imass
+              write (s%inpfile,*) species(in1)%symbol, s%atom(iatom)%ratom
+            end do
+            close (unit = s%inpfile)
 
 ! ===========================================================================
 ! ---------------------------------------------------------------------------
@@ -454,14 +475,14 @@
           if (iwriteout_abs .eq. 1) call absorption (s)
 
 ! Destroy final arrays
-          !call destroy_kspace (s)
-          !call destroy_denmat (s)
+!         call destroy_kspace (s)
+!         call destroy_denmat (s)
           call destroy_charges (s)
 
-          !call destroy_neighbors (s)
-          !call destroy_neighbors_PP (s)
+!         call destroy_neighbors (s)
+!         call destroy_neighbors_PP (s)
 
-          ! destroy neighbors last
+!         destroy neighbors last
           deallocate (s%xl) ! where to put this?
 
 ! Calculate the electronic density of states.
@@ -514,7 +535,7 @@
 509     format (2x, ' Atomic Energy = ', f15.6)
 510     format (2x, '     CohesiveE = ', f15.6)
 511     format (2x, ' Cohesive Energy per atom  = ', f15.6)
-
+512     format (2x, 'ftot =',i6 ,3(2x,f15.6))
 ! End Program
 ! ===========================================================================
         stop

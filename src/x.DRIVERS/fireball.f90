@@ -73,6 +73,7 @@
         use M_Dassemble_3c
         use M_Dassemble_vxc
         use M_Dassemble_usr
+        use M_Dassemble_ewald
         use M_build_forces
 ! /MD
         use M_dynamics
@@ -174,7 +175,6 @@
 !             R E A D   I N   S Y S T E M   I N F O R M A T I O N
 ! ---------------------------------------------------------------------------
 ! ===========================================================================
-
         write (ilogfile,'(A)') 'Fdata Setup '
         write (ilogfile,'(A)') '=========== '
         write (ilogfile,*)
@@ -231,13 +231,6 @@
 ! is modified to take s as a parameter, rather than reference s directly
 !$omp parallel do private (s, slogfile, sigma, iscf_iteration, timei, timef) &
 !$omp             private (ebs, uii_uee, uxcdcc, etot)
-        open(unit= 54, file="/home/accounts/ahernandez/thunder4.0/fireball-fireball/tests/08.co2_180_dogs/dmatx2.txt")
-        write(54,*) '                         '
-        write(54,*) 'new structure'
-        open(unit= 55, file="/home/accounts/ahernandez/thunder4.0/fireball-fireball/tests/08.co2_180_dogs/fvnamatx.txt")
-        write(55,*) '                         '
-        write(55,*) 'new structure'
-        
         do istructure = 1, nstructures
           s => structures(istructure)
           read (1, *) s%basisfile
@@ -277,7 +270,6 @@
           !nstepf = 100
           call set_gear ()
           do itime_step = nstepi, nstepf
- 
              write (s%logfile, *)
              write (s%logfile, '(A, I5, A1, I5, A1)') 'Molecular-Dynamics Loop  Step: (', itime_step, '/', nstepf, ')'
              write (s%logfile, '(A)') '==============================================='
@@ -320,8 +312,8 @@
               write (s%logfile, *)
               write (s%logfile, *) ' Two-center charge dependent assemblers. '
               call assemble_vna_2c (s)
-!             call assemble_ewaldsr (s)
-!             call assemble_ewaldlr (s)
+              call assemble_ewaldsr (s)
+              call assemble_ewaldlr (s)
               write (s%logfile, *) ' Three-center charge dependent assemblers. '
               call assemble_vna_3c (s)
               call assemble_vxc (s)
@@ -385,7 +377,6 @@
               write (s%logfile, 511) (etot - atomic_energy)/s%natoms
               write (s%logfile, *)
               if (iwriteout_xyz .eq. 1) call writeout_xyz (s, ebs, uii_uee, uxcdcc)
-              !write (s%logfile, *) ' ----------------------------------------------------- '
 
 ! End scf loop
               if (sigma .gt. 0.0d0) then
@@ -394,10 +385,7 @@
                 exit
               end if
             end do! End scf loop
-            if (istructure .ne. 1) then
-                write (31,*) istructure, -(etot - etot_previous)/0.003d0
-                !write (31,*) istructure, (etot - etot_previous)/0.01d0
-            end if
+
             etot_previous = etot
 
 ! ===========================================================================
@@ -424,6 +412,7 @@
             call Dassemble_vna_2c (s)
             call Dassemble_rho_2c (s)
             call Dassemble_vxc (s)
+            call Dassemble_ewaldsr (s)
 
             write (s%logfile,*) ' Three-center non-charge dependent Dassemblers. '
             call Dassemble_vna_3c (s)
@@ -434,6 +423,10 @@
             call Dassemble_uxc (s)
 
             call build_forces (s)
+            call writeout_forces (s)
+
+            ! testing only
+
             if (iwriteout_forces .eq. 1) call writeout_forces (s)
 
             write (s%logfile,*)
@@ -475,14 +468,14 @@
           if (iwriteout_abs .eq. 1) call absorption (s)
 
 ! Destroy final arrays
-!         call destroy_kspace (s)
-!         call destroy_denmat (s)
+          !call destroy_kspace (s)
+          !call destroy_denmat (s)
           call destroy_charges (s)
 
-!         call destroy_neighbors (s)
-!         call destroy_neighbors_PP (s)
+          !call destroy_neighbors (s)
+          !call destroy_neighbors_PP (s)
 
-!         destroy neighbors last
+          ! destroy neighbors last
           deallocate (s%xl) ! where to put this?
 
 ! Calculate the electronic density of states.

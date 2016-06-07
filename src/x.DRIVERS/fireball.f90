@@ -112,7 +112,26 @@
              type(T_structure), target :: t           !< the structure to be used
            end subroutine dos
 
-        end interface
+           subroutine writeout_xyz (t, ebs, uii_uee, uxcdcc)
+             use M_species
+             use M_configuraciones
+             implicit none
+             type(T_structure), target :: t             ! the structure to be used
+             real, intent (in) :: ebs                   ! band-structure energy
+             real, intent (in) :: uii_uee, uxcdcc       ! short-range energies
+           end subroutine writeout_xyz
+
+           subroutine writeout_energies (t, ebs, uii_uee, uxcdcc)
+             use M_assemble_blocks
+             use M_species
+             use M_configuraciones
+             implicit none
+             type(T_structure), target :: t             ! the structure to be used
+             real, intent (in) :: ebs                   ! band-structure energy
+             real, intent (in) :: uii_uee, uxcdcc       ! short-range energies
+           end subroutine writeout_energies
+
+          end interface
 
 ! Argument Declaration and Description
 ! ===========================================================================

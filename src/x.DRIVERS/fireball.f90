@@ -263,14 +263,13 @@
             open (unit = s%logfile, file = slogfile, status = 'replace')
           end if
           write (ilogfile, 100) s%basisfile
-          write (*, 100) s%basisfile
 
           write (s%logfile,'(A)') 'Structure'
           write (s%logfile,'(A)') '========='
           write (s%logfile,*)
 
           write (s%logfile, *) ' Structure = ', istructure
-          write (s%logfile,*)
+          write (s%logfile, *)
 
 
           ! Read in the coordinates and parameters

@@ -1,7 +1,7 @@
 ! copyright info:
 !
-! @Copyright 2016
-! Fireball Committee
+!                                    @Copyright 2016
+!                                  Fireball Committee
 ! West Virginia University - James P. Lewis, Chair
 ! Arizona State University - Otto F. Sankey
 ! Universidad Autonoma de Madrid - Jose Ortega
@@ -28,7 +28,7 @@
 
 ! Program Description
 ! ===========================================================================
-!> This is the main driver for the LIGHTNING version of FIREBALL.
+!> This is the main driver for FIREBALL.
 ! ==========================================================================
 ! Code written by:
 !> @author Ning Ma
@@ -88,7 +88,6 @@
         implicit none
 
         interface
-
            subroutine Qmixer (t, iscf_iteration, sigma)
              use M_configuraciones
              implicit none
@@ -150,7 +149,7 @@
         integer itime_step
         real sigma
         character (len = 25) :: slogfile
-        integer cont
+
         logical :: file_exists
 
 ! --------------------------------------------------------------------------
@@ -161,11 +160,9 @@
         real timei, timef
 
 ! Energies
-        real atomic_energy                           ! total atomic energy
         real ebs                                     ! band-structure energy
         real uii_uee, uxcdcc                         ! short-range energies
         real etot                                    ! total energy
-        real etot_per_atom                           ! total energy per atom
 
 ! Temporary for debugging forces
         real etot_previous
@@ -319,7 +316,6 @@
             call assemble_vnl_3c (s)
 
 ! Put scf loop here
-            cont= 0
             sigma = 999.0d0
             iscf_iteration = 1
             do while (sigma .gt. scf_tolerance_set .and.                  &
@@ -353,7 +349,7 @@
 
               call calculate_charges (s)
               if (iwriteout_charges .eq. 1) call writeout_charges (s)
-              call Qmixer (s, iscf_iteration, sigma)
+!             call Qmixer (s, iscf_iteration, sigma)
 
 ! ===========================================================================
 ! ---------------------------------------------------------------------------
@@ -365,35 +361,11 @@
               uii_uee = 0.0d0; uxcdcc = 0.0d0
               call assemble_uee (s, uii_uee)
               call assemble_uxc (s, uxcdcc)
-              call writeout_energies (s, ebs, uii_uee, uxcdcc)
-              ! Writing out the energy pieces
-              write (s%logfile, *)
-              write (s%logfile, '(A)') 'Total Energy'
-              write (s%logfile, '(A)') '------------'
-              write (s%logfile, *)
-              write (s%logfile, 502) ebs
-              write (s%logfile, 503) uii_uee
-              write (s%logfile, 505) uxcdcc
 
               ! Evaluate total energy
               etot = ebs + uii_uee + uxcdcc
-              write (s%logfile, 507) etot
 
-              ! Total energy per atom
-              etot_per_atom = etot/s%natoms
-              write (s%logfile, 508) etot_per_atom
-
-              ! Cohesive Energy
-              atomic_energy = 0.0d0
-              do iatom = 1, s%natoms
-                in1 = s%atom(iatom)%imass
-                atomic_energy = atomic_energy + species(in1)%atomicE
-              end do
-              write (s%logfile, 509) atomic_energy
-              write (s%logfile, 510) etot - atomic_energy
-              write (s%logfile, *)
-              write (s%logfile, 511) (etot - atomic_energy)/s%natoms
-              write (s%logfile, *)
+              call writeout_energies (s, ebs, uii_uee, uxcdcc)
               if (iwriteout_xyz .eq. 1) call writeout_xyz (s, ebs, uii_uee, uxcdcc)
 
 ! End scf loop
@@ -402,8 +374,7 @@
               else
                 exit
               end if
-            end do! End scf loop
-
+            end do ! End scf loop
             etot_previous = etot
 
 ! ===========================================================================
@@ -442,8 +413,6 @@
 
             call build_forces (s)
             call writeout_forces (s)
-
-            ! testing only
 
             if (iwriteout_forces .eq. 1) call writeout_forces (s)
 
@@ -538,14 +507,6 @@
 ! ===========================================================================
 100     format (2x, ' Structure: ', a25)
 
-502     format (2x, '           ebs = ', f15.6)
-503     format (2x, '     uii - uee = ', f15.6)
-505     format (2x, '        uxcdcc = ', f15.6)
-507     format (2x, '          ETOT = ', f15.6)
-508     format (2x, '     Etot/atom = ', f15.6)
-509     format (2x, ' Atomic Energy = ', f15.6)
-510     format (2x, '     CohesiveE = ', f15.6)
-511     format (2x, ' Cohesive Energy per atom  = ', f15.6)
 512     format (2x, 'ftot =',i6 ,3(2x,f15.6))
 ! End Program
 ! ===========================================================================

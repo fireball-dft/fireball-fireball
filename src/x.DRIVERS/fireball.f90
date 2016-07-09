@@ -321,7 +321,8 @@
             do while (sigma .gt. scf_tolerance_set .and.                  &
       &                 iscf_iteration .le. max_scf_iterations_set)
               write (s%logfile, *)
-              write (s%logfile, '(A, I5, A7, I5, A1)') 'Self-Consistent Field step: ', iscf_iteration, ' (max: ', max_scf_iterations_set, ')'
+              write (s%logfile, '(A, I5, A7, I5, A1)') 'Self-Consistent Field step: ', &
+                   & iscf_iteration, ' (max: ', max_scf_iterations_set, ')'
               write (s%logfile, '(A)') '----------------------------------------------------'
               write (s%logfile, *)
               write (s%logfile, *) ' Two-center charge dependent assemblers. '

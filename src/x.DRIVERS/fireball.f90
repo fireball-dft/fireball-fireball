@@ -72,6 +72,7 @@
         use M_Dassemble_PP_2c
         use M_Dassemble_3c
         use M_Dassemble_vxc
+        use M_Dassemble_vxc_3c
         use M_Dassemble_usr
         use M_Dassemble_ewald
         use M_build_forces
@@ -101,23 +102,23 @@
              use M_configuraciones
              use M_atom_functions
              implicit none
-             type(T_structure), target :: t           !< the structure to be used
+             type(T_structure), target :: t         !< the structure to be used
            end subroutine absorption
 
            subroutine dos (t)
              use M_species
              use M_configuraciones
              implicit none
-             type(T_structure), target :: t           !< the structure to be used
+             type(T_structure), target :: t         !< the structure to be used
            end subroutine dos
 
            subroutine writeout_xyz (t, ebs, uii_uee, uxcdcc)
              use M_species
              use M_configuraciones
              implicit none
-             type(T_structure), target :: t             ! the structure to be used
-             real, intent (in) :: ebs                   ! band-structure energy
-             real, intent (in) :: uii_uee, uxcdcc       ! short-range energies
+             type(T_structure), target :: t         ! the structure to be used
+             real, intent (in) :: ebs               ! band-structure energy
+             real, intent (in) :: uii_uee, uxcdcc   ! short-range energies
            end subroutine writeout_xyz
 
            subroutine writeout_energies (t, ebs, uii_uee, uxcdcc)
@@ -125,9 +126,9 @@
              use M_species
              use M_configuraciones
              implicit none
-             type(T_structure), target :: t             ! the structure to be used
-             real, intent (in) :: ebs                   ! band-structure energy
-             real, intent (in) :: uii_uee, uxcdcc       ! short-range energies
+             type(T_structure), target :: t         ! the structure to be used
+             real, intent (in) :: ebs               ! band-structure energy
+             real, intent (in) :: uii_uee, uxcdcc   ! short-range energies
            end subroutine writeout_energies
 
           end interface
@@ -215,8 +216,10 @@
         write (ilogfile,'(A)') '========== '
         write (ilogfile,*)
 
-        INQUIRE(FILE="structures.inp", EXIST=file_exists)   ! file_exists will be TRUE if the file
-                                                            ! exists and FALSE otherwise
+        ! file_exists will be TRUE if the file
+        INQUIRE(FILE="structures.inp", EXIST=file_exists)   
+                                                            
+        ! exists and FALSE otherwise
         if ( file_exists ) then
            open (unit = 1, file = 'structures.inp', status = 'old')
         else
@@ -250,8 +253,6 @@
         do istructure = 1, nstructures
           s => structures(istructure)
           read (1, *) s%basisfile
-          write(54,*) 'structure =>', istructure
-          write(55,*) 'structure =>', istructure
           if (iseparate .eq. 1) then
             s%logfile = istructure + 1000
             s%inpfile = istructure + 2000
@@ -268,13 +269,11 @@
           write (s%logfile, *) ' Structure = ', istructure
           write (s%logfile, *)
 
-
           ! Read in the coordinates and parameters
           call read_positions (s)
 
           ! Set the charges for istructure
           call read_charges (s)
-
           call set_constraints (s)
 
 ! Molecular-dynamics loop
@@ -285,10 +284,10 @@
           !nstepf = 100
           call set_gear ()
           do itime_step = nstepi, nstepf
-             write (s%logfile, *)
-             write (s%logfile, '(A, I5, A1, I5, A1)') 'Molecular-Dynamics Loop  Step: (', itime_step, '/', nstepf, ')'
-             write (s%logfile, '(A)') '==============================================='
-             write (s%logfile, *)
+            write (s%logfile, *)
+            write (s%logfile, '(A, I5, A1, I5, A1)') 'Molecular-Dynamics Loop  Step: (', itime_step, '/', nstepf, ')'
+            write (s%logfile, '(A)') '==============================================='
+            write (s%logfile, *)
 
 ! ===========================================================================
 ! ---------------------------------------------------------------------------
@@ -312,14 +311,14 @@
             call assemble_svnl (s)
             call assemble_vnl_2c (s)
 
-            write (s%logfile,*) ' Three-center non-charge dependent assemblers. '
+            write (s%logfile,*) ' Three-center non-charge dependent assemblers.'
             call assemble_vnl_3c (s)
 
 ! Put scf loop here
             sigma = 999.0d0
             iscf_iteration = 1
-            do while (sigma .gt. scf_tolerance_set .and.                  &
-      &                 iscf_iteration .le. max_scf_iterations_set)
+            do while (sigma .gt. scf_tolerance_set .and.                     &
+      &               iscf_iteration .le. max_scf_iterations_set)
               write (s%logfile, *)
               write (s%logfile, '(A, I5, A7, I5, A1)') 'Self-Consistent Field step: ', iscf_iteration, ' (max: ', max_scf_iterations_set, ')'
               write (s%logfile, '(A)') '----------------------------------------------------'
@@ -344,12 +343,13 @@
               call cpu_time(timef)
               write (s%logfile, *)
               write (s%logfile, *) ' kspace time: ', timef - timei
+
               call density_matrix (s)
               if (iwriteout_density .eq. 1) call writeout_density (s)
 
               call calculate_charges (s)
               if (iwriteout_charges .eq. 1) call writeout_charges (s)
-!             call Qmixer (s, iscf_iteration, sigma)
+              call Qmixer (s, iscf_iteration, sigma)
 
 ! ===========================================================================
 ! ---------------------------------------------------------------------------
@@ -393,7 +393,7 @@
             write (s%logfile, *)
 
 ! Assemble the derivative blocks needed for forces
-            write (s%logfile, *) ' Two-center non-charge dependent Dassemblers. '
+            write (s%logfile, *) ' Two-center non-charge dependent Dassemblers.'
             call Dassemble_S (s)
             call Dassemble_T (s)
             call Dassemble_svnl (s)
@@ -403,7 +403,7 @@
             call Dassemble_vxc (s)
             call Dassemble_ewaldsr (s)
 
-            write (s%logfile,*) ' Three-center non-charge dependent Dassemblers. '
+            write (s%logfile,*) ' Three-center non-charge dependent Dassemblers.'
             call Dassemble_vna_3c (s)
             call Dassemble_vxc_3c (s)
 
@@ -412,8 +412,6 @@
             call Dassemble_uxc (s)
 
             call build_forces (s)
-            call writeout_forces (s)
-
             if (iwriteout_forces .eq. 1) call writeout_forces (s)
 
             write (s%logfile,*)
@@ -426,7 +424,8 @@
 ! Output the coordinates to a .xyz file
             slogfile = s%basisfile(:len(trim(s%basisfile))-4)
             slogfile = trim(slogfile)//'.xyz'
-            open (unit = s%inpfile, file = slogfile, status = 'unknown', position = 'append')
+            open (unit = s%inpfile, file = slogfile, status = 'unknown',     &
+     &            position = 'append')
             write (s%inpfile, *) s%natoms
             write (s%inpfile, *) etot, T_instantaneous
             do iatom = 1, s%natoms
@@ -494,8 +493,10 @@
 
         call cpu_time (time_end)
 
-        write (ilogfile,'(A, F9.2, A)') 'FIREBALL RUNTIME : ', time_end-time_begin, ' [sec]  '
-        write (*,'(A, F9.2, A)') 'FIREBALL RUNTIME : ', time_end-time_begin, ' [sec]  '
+        write (ilogfile,'(A, F9.2, A)') 'FIREBALL RUNTIME : ',               &
+     &    time_end-time_begin, ' [sec]  '
+        write (*,'(A, F9.2, A)') 'FIREBALL RUNTIME : ',                      &
+     &    time_end-time_begin, ' [sec]  '
         write (ilogfile,'(A)') 'FIREBALL EXECUTION COMPLETE'
         close (ilogfile)
 
@@ -508,6 +509,7 @@
 100     format (2x, ' Structure: ', a25)
 
 512     format (2x, 'ftot =',i6 ,3(2x,f15.6))
+
 ! End Program
 ! ===========================================================================
         stop

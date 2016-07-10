@@ -14,11 +14,9 @@ install:
     - sudo apt-get install gcc-4.8 gfortran-4.8 liblapack-dev libblas-dev
     - cd ..
     - git clone https://github.com/fireball-dft/fireball-master.git
-    - cd fireball-fireball/src
-    - ./runme_before_compile.sh
-    - make fireball.x
-    - make lfireball.x
-    
+    - cd fireball-fireball
+    - ./configure
+    - make distcheck
 
 script: true
     # make check PFUNIT=pfunit

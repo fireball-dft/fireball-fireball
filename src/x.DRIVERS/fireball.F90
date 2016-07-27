@@ -49,8 +49,8 @@
 ! Program Declaration
 ! ===========================================================================
         program fireball
-
         use M_precision
+
 ! /SYSTEM
         use M_species
         use M_configuraciones

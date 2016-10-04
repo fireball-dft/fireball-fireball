@@ -32,7 +32,6 @@
 *.x
 *.xsf
 .svn
-.project
 *~
 .DS_Store
 autom4te.cache
